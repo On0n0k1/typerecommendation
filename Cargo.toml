@@ -1,0 +1,24 @@
+[package]
+name = "typerecommendation"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+parking_lot = { version = "0.12", features = ["send_guard"]}
+percent-encoding-rfc3986 = "0.1.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.87"
+tokio = { version = "1", features = ["full"] }
+warp = "0.3"
+
+# This dependency is used for loading .env file
+# It won't be used in the dockerfile, so in there we will call cargo build --no-default-features
+dotenv = { version = "0.15.0", optional = true }
+
+[features]
+# By default we enable feature with-dotenv when running locally
+# default=["with-dotenv"]
+# And the feature requires the crate dotenv
+dotenv=["dep:dotenv"]
