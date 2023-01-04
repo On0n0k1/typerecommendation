@@ -1,22 +1,36 @@
+use parking_lot::RwLock;
+
 use crate::{
     entry::Entry,
+    env::SuggestionNumber,
     log::log_debug,
     node::NodeExt,
     procedures::get::{GetPrefixError, SearchResult},
     tree::Counter,
 };
 
-// Trait Get to be implemented in Node.
+use std::{collections::HashMap, sync::Arc};
+
+/// Contains all Node logic for GET entry endpoint.
 pub trait Get {
-    fn get_top_entries(&self, prefix: &str, counter: &mut Counter) -> Result<SearchResult, GetPrefixError>
+    /// Check if current Node is the valid prefix.
+    ///
+    /// If not valid, return next Node to check.
+    ///
+    /// If valid, check all children for the top recommendations.
+    fn get_top_entries(
+        &self,
+        prefix: &str,
+        counter: &mut Counter,
+    ) -> Result<SearchResult, GetPrefixError>
     where
         Self: NodeExt,
     {
         // If this is the node for the given prefix
-        let is_correct_node: bool = prefix.len() == self.get_prefix_len();
+        let is_correct_node: bool = prefix.len() == self.get_prefix().len();
 
         log_debug(&format!(
-            "\nFunction crate::procedures::get::node::Get::get_top ... Prefix: {}, Times: {}.\n",
+            "\nFunction crate::procedures::get::node::Get::get_top_entries ... Prefix: {}, Times: {}.\n",
             self.get_prefix(),
             self.get_times(),
         ));
@@ -27,56 +41,25 @@ pub trait Get {
                 "Returning result for prefix {} .",
                 self.get_prefix()
             ));
-            log_debug(&format!("Returning {} entries", self.get_top_len()));
+
+            let mut top: Vec<Entry> = Vec::with_capacity(self.get_suggestions());
             let mut result = Vec::with_capacity(self.get_suggestions());
 
-            let limit: usize = self.limit();
+            let mut suggestion_number = self.get_suggestions();
 
-            let top: &Vec<Entry> = self.get_top();
-
-            // If this node is a name, include it as the first option
             if self.is_name() {
-                let name = self.get_prefix();
-                let times = self.get_times();
-                // let first_option: Entry = Entry {
-                //     name: self.get_prefix(),
-                //     times: self.get_times(),
-                // };
-                let first_option: Entry = Entry::new(name, times);
-                result.push(first_option);
-
-                // for i in 0..limit {
-                //     if top[i] == result[0] {
-                //         // if top.len() > limit {
-                //         //     limit = self.limit() + 1;
-                //         // }
-
-                //         continue;
-                //     }
-
-                //     result.push(top[i].clone());
-                // }
-
-                for i in top.iter().take(limit) {
-                    if *i == result[0]{
-                        continue;
-                    }
-
-                    result.push(i.clone());
-                }
-
-                return Ok(SearchResult::Success(result));
+                let entry = self.get_entry().clone();
+                log_debug(&format!("Including first entry: {entry}"));
+                result.push(entry);
+                suggestion_number -= 1;
             }
+            
+            self.collect_top_first(&mut top, &suggestion_number);
 
-            // for i in 0..limit {
-            //     result.push(top[i].clone());
-            // }
+            result.append(&mut top);
 
-            for i in top.iter(){
-                result.push(i.clone());
-            }
-
-            // top.iter().map(|i| result.push(i.clone()));
+            let entries: usize = result.len();
+            log_debug(&format!("Returning {entries} entries."));
 
             return Ok(SearchResult::Success(result));
         }
@@ -88,6 +71,59 @@ pub trait Get {
         match self.next_child(character) {
             None => Err(GetPrefixError::NotFound(prefix.into())),
             Some(value) => Ok(SearchResult::Next(value)),
+        }
+    }
+
+    // The first entry is ignored, because it is already included as the first recommendation.
+
+    /// Recursively checks all children of current Node for recommendations.
+    fn collect_top_first(&self, top: &mut Vec<Entry>, suggestion_number: &SuggestionNumber)
+    where
+        Self: NodeExt,
+    {
+        let children: &HashMap<String, Arc<RwLock<Self>>> = self.get_children();
+
+        for (_, child) in children.iter() {
+            child.read().collect_top(top, suggestion_number);
+        }
+    }
+
+    fn collect_top(&self, top: &mut Vec<Entry>, suggestion_number: &SuggestionNumber)
+    where
+        Self: NodeExt,
+    {
+        let children: &HashMap<String, Arc<RwLock<Self>>> = self.get_children();
+
+        for (_, child) in children.iter() {
+            child.read().collect_top(top, suggestion_number);
+        }
+
+        if self.is_name() {
+            // If list is not full, include the entry.
+            if top.len() < *suggestion_number {
+                let entry: Entry = self.get_entry().clone();
+
+                top.push(entry);
+                top.sort_by(|a, b| b.cmp(a));
+
+                return;
+            }
+
+            let last: &Entry = top
+                .last()
+                .expect("Unexpected Behavior when retrieving last entry.");
+
+            // If the last (lowest) entry is lower than current, include the current.
+            if *last < *self.get_entry() {
+                let entry: Entry = self.get_entry().clone();
+
+                // Replace the last entry with current to avoid memory allocation.
+                *top.last_mut()
+                    .expect("Unexpected Behavior when retrieving last mut entry.") = entry;
+
+                // sorting in reverse so the first entries are the highest.
+                top.sort_by(|a, b| b.cmp(a));
+            }
         }
     }
 }

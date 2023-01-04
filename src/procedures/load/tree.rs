@@ -13,6 +13,7 @@ use crate::{
     tree::{Counter, TreeExt},
 };
 
+/// Load local 'names.json' file into a HashMap.
 fn load_json() -> HashMap<String, u32> {
     // Load the file into a string.
     let input_path = "./names.json";
@@ -21,23 +22,25 @@ fn load_json() -> HashMap<String, u32> {
     // Parse the json File
     let loaded_values: HashMap<String, u32> = serde_json::from_str(&text).unwrap();
 
-    // Uncomment the line below to see all loaded names
-    // println!("Hash Map = {:#?}", loaded_values);
-
     log_debug(&format!("{} elements found.", loaded_values.len()));
 
     loaded_values
 }
 
+/// Contains all Tree logic for loading entries into the prefix tree.
 pub trait Load {
-    fn include(&self, entry: Entry) -> Result<(), LoadError> where
-    Self: TreeExt{
+    /// Include given Entry to prefix tree. Creating new nodes as needed.
+    ///
+    /// # Errors
+    ///
+    /// If Entry name is empty, returns Err(LoadError).
+    fn include(&self, entry: Entry) -> Result<(), LoadError>
+    where
+        Self: TreeExt,
+    {
         log_debug(&format!("Loading {} .", entry));
 
         let mut counter: Counter = 0;
-
-        // let mut traveller: Option<Weak<RwLock<Node>>> =
-        //     node.write().load(&entry, &mut counter)?;
 
         let node: &Arc<RwLock<Node>> = self.get_node();
 
@@ -53,9 +56,7 @@ pub trait Load {
                     // We do this because an Arc pointer keeps the reference alive, while a Weak reference doesn't.
                     // A child node keeping itself alive would result in a memory leak.
                     match value.upgrade() {
-                        None => {
-                            return Err(LoadError::ReferenceEmptyDuringLoad(entry, counter))
-                        }
+                        None => return Err(LoadError::ReferenceEmptyDuringLoad(entry, counter)),
                         Some(value) => {
                             // Run the load method to get the next child
                             let next: Option<Weak<RwLock<Node>>> =
@@ -74,14 +75,15 @@ pub trait Load {
         Ok(())
     }
 
+    /// Load all entries from local 'names.json' file to this Tree.
     fn load(&self) -> Result<(), LoadError>
     where
         Self: TreeExt,
     {
         let entries: HashMap<String, u32> = load_json();
 
-        for (name, times) in entries.iter() {
-            let entry = Entry::new(name, *times as u64);
+        for (name, times) in entries {
+            let entry = Entry::new(name, times as u64);
 
             self.include(entry)?;
         }

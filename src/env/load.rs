@@ -2,6 +2,7 @@ use std::env;
 
 use crate::{env::EnvError, log::log_debug};
 
+/// Return environment variable.
 pub fn load_env_var(key: &str) -> Result<String, EnvError> {
     match env::var(key) {
         Ok(value) => {

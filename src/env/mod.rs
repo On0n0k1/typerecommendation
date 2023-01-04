@@ -6,9 +6,10 @@ use load::load_env_var;
 
 pub type SuggestionNumber = usize;
 
-// I could make it just a return a tuple of values like this (host, port, suggestion_number)
+// We could make it just a return a tuple of values like this (host, port, suggestion_number)
 // But if we accidentally mixed the values, it could lead to hard-to-find bugs.
 
+/// Contains environment variables HOST, PORT and SUGGESTION_NUMBER.
 pub struct EnvVars {
     pub host: String,
     pub port: String,
@@ -16,6 +17,12 @@ pub struct EnvVars {
 }
 
 impl EnvVars {
+    /// Load Environment variables: HOST, PORT and SUGGESTION_NUMBER.
+    ///
+    /// Compiles differently depending on setting:
+    /// - dev: Load from local .env file.
+    /// - test: Set specific values for testing.
+    /// - release: Environment values must be set before running.
     pub fn new() -> Result<EnvVars, EnvError> {
         load_locally();
 

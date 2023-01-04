@@ -6,6 +6,9 @@ use crate::{
     tree::Tree,
 };
 
+/// Set all endpoints and start the server.
+///
+/// Will keep running until the system shuts down.
 pub async fn start(socket_addr: SocketAddr, tree: Tree) {
     let tree_copy = tree.clone();
 

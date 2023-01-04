@@ -1,5 +1,3 @@
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::needless_lifetimes, clippy::from_over_into))]
-
 mod endpoints;
 mod entry;
 mod env;
@@ -37,8 +35,6 @@ async fn main() {
         .parse()
         .expect("Failed to parse the default socket");
 
-    // Had an issue where warp was unable to parse the URI as address for the server
-    //
     // If it fails to parse the socket Address, will use unindentified address 0.0.0.0
     let socket_addr: SocketAddr = match host_port.parse() {
         Ok(value) => value,

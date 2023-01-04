@@ -3,6 +3,7 @@ use std::fmt::Display;
 // While this Enum only has a single value,
 // Keeping it makes it easier to extend the code.
 
+#[derive(Debug)]
 pub enum GetPrefixError {
     NotFound(String),
 }

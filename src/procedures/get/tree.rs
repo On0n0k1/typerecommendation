@@ -1,4 +1,4 @@
-use std::sync::{ Arc, Weak };
+use std::sync::{Arc, Weak};
 
 use parking_lot::RwLock;
 
@@ -10,7 +10,9 @@ use crate::{
     tree::TreeExt,
 };
 
+/// Contains all Tree logic for GET entry endpoint.
 pub trait Get {
+    /// Retrieves top recommendations for given prefix.
     fn get_top(&self, prefix: &str) -> Result<GetNamesOutput, GetPrefixError>
     where
         Self: TreeExt,
@@ -18,7 +20,7 @@ pub trait Get {
         log_debug("------------------------");
         let mut counter = 0;
         let first_node: Weak<RwLock<Node>> = Arc::downgrade(self.get_node());
-        
+
         let mut traveller: Weak<RwLock<Node>> = first_node;
 
         // Repeat until the last node

@@ -6,10 +6,11 @@ pub fn log_debug(message: &str) {
 
 #[cfg(not(debug_assertions))]
 pub fn log_debug(_message: &str) {
-    // Doesn't do anything in production
+    // Does nothing during production
 }
 
 #[cfg(test)]
-pub fn log_debug(_message: &str) {
-    // Doesn't do anything during tests
+pub fn log_debug(message: &str) {
+    println!("{}", message);
+    // Does nothing during tests
 }

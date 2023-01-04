@@ -9,7 +9,17 @@ use crate::{
     tree::Counter,
 };
 
+/// Contains all Node logic for loading entries into the prefix tree.
 pub trait Load {
+    /// Checks if current Node is valid for given Entry.
+    ///
+    /// If not valid, returns next Node to access, creates new Nodes as needed.
+    ///
+    /// If valid, assign 'entry.times' to this Node.
+    ///
+    /// # Errors
+    ///
+    /// If Entry name is empty, returns Err(LoadError).
     fn load(
         &mut self,
         entry: &Entry,
@@ -25,10 +35,8 @@ pub trait Load {
         // If this is the last node (character) of the name
         let is_last_node: bool = *counter == entry.get_name().len();
 
-        self.include_top(entry);
-
         if is_last_node {
-            self.set_times(*entry.get_times());
+            *self.get_times_mut() = *entry.get_times();
 
             Ok(None)
         } else {

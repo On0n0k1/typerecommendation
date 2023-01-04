@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use crate::{entry::Entry, tree::Counter};
 
+#[derive(Debug)]
 pub enum LoadError {
     EntryNameIsEmpty(Entry, Counter),
     ReferenceEmptyDuringLoad(Entry, Counter),

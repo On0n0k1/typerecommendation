@@ -44,8 +44,8 @@ mod tests {
     }
 
     fn new_success() -> VoteResult {
-        let entry: Entry = Entry::new("AName", 42);
-        let success: VoteResult = VoteResult::Success(entry, None);
+        let entry: Entry = Entry::new("AName".into(), 42);
+        let success: VoteResult = VoteResult::Success(entry);
 
         success
     }
@@ -58,7 +58,7 @@ mod tests {
         fn post_result_next_error() {
             let (_node, next) = new_empty_next();
 
-            // This is expected to panic because VoteResult::Next shouldn't be used by the endpoints
+            // This is expected to panic because VoteResult::Next is not meant to be used by the endpoints
             let _warp_response: Result<warp::reply::Response, warp::Rejection> = next.into();
         }
 
@@ -79,8 +79,8 @@ mod tests {
 
         #[test]
         fn post_result_success() {
-            let entry: Entry = Entry::new("AName", 32);
-            let success: VoteResult = VoteResult::Success(entry, None);
+            let entry: Entry = Entry::new("AName".into(), 32);
+            let success: VoteResult = VoteResult::Success(entry);
 
             let warp_response: Result<warp::reply::Response, warp::Rejection> = success.into();
             let warp_response = match warp_response {
@@ -91,20 +91,6 @@ mod tests {
             // Status code 201
             let expected_status_code = StatusCode::CREATED;
             assert_eq!(warp_response.status(), expected_status_code);
-        }
-
-        #[test]
-        #[should_panic(expected = "Unexpected VoteResult. Got Success with a lock.")]
-        fn post_result_success_error() {
-            let node: Arc<RwLock<Node>> = Node::new(None, "".into(), 0, 0);
-            let lock: Weak<RwLock<Node>> = Arc::downgrade(&node);
-
-            let entry: Entry = Entry::new("AName", 42);
-            let next: VoteResult = VoteResult::Success(entry, Some(lock));
-
-            // The lock in VoteResult::Success is used for traversing back into previous nodes and updating top recommendations
-            // If it is not None when it reaches the endpoint, it must panic .
-            let _warp_response: Result<warp::reply::Response, warp::Rejection> = next.into();
         }
     }
 
