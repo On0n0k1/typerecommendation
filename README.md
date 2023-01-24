@@ -1,5 +1,11 @@
-# typerecommendation
-warp server that sends recommendations to users
+# Type Recommendation Project
+
+When we start typing on a search engine, a list of recommendations for names are suggested related to what we wrote. This warp server simulates that. It is a prefix tree that stores nodes for each character of the names. When a prefix name is reached, it will count all the children and return a list of the top entries found. If one of the entries is selected, it will increment one of the entries by 1.
+
+
+It is also intended as an example of conditional compilation in Rust. If feature `dotenv` is enabled, it will load the local '.env' file. If compiled for `--release`, it will not show debug messages.
+
+
 
 # Start up 
 
